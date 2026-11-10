@@ -5,6 +5,12 @@ import (
 	"math"
 )
 
+type measurement struct {
+	name string
+	unit string
+	value float32
+}
+
 // float32ToRegisters splits a float32 into two 16-bit Modbus registers.
 // Byte order: big endian, high word first.
 func float32ToRegisters(v float32) []uint16 {
@@ -15,11 +21,18 @@ func float32ToRegisters(v float32) []uint16 {
 }
 
 func main() {
-	names := []string{"voltage", "current", "power", "energy"}
-	values := []float32{230.0, 10.0, 2300.0, 1234.5}
+	// Static test values; order defines the register map (2 registers each).
+	measurements := []measurement{
+		{name: "voltage", unit: "V", value: 230.0},
+		{name: "current", unit: "A", value: 10.0},
+		{name: "power", unit: "W", value: 2300.0},
+		{name: "energy", unit: "kWh", value: 1234.5},
+	}
 
-	for i, v := range values {
-		regs := float32ToRegisters(v)
-		fmt.Printf("%-8s %8.1f -> 0x%04X 0x%04X\n", names[i], v, regs[0], regs[1])
+	for i, m := range measurements {
+		regs := float32ToRegisters(m.value)
+		addr := i * 2 // each float32 occupies two registers
+		fmt.Printf("%2d %-8s %8.1f %-3s -> 0x%04X 0x%04X\n",
+			addr, m.name, m.value, m.unit, regs[0], regs[1])
 	}
 }
