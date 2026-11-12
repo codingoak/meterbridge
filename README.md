@@ -10,10 +10,10 @@ A small, **read-only** gateway that polls energy meters over **Modbus TCP** and 
 
 ## What it does
 
-```
+```text
 ┌──────────────┐  Modbus TCP   ┌──────────────┐   REST (JSON)   ┌──────────────┐
 │ Energy meter │ ◄──────────── │  meterbridge │ ──────────────► │   Clients    │
-│(or simulator)│    read-only  │   (poller)   │                 │ dashboards…  │
+│(or simulator)│   read-only   │   (poller)   │                 │ dashboards…  │
 └──────────────┘               └──────┬───────┘                 └──────────────┘
                                       │ optional
                                       ▼ MQTT
@@ -27,6 +27,19 @@ A small, **read-only** gateway that polls energy meters over **Modbus TCP** and 
 - Serves the latest values via `GET /api/values` and a health check via `GET /api/health`
 - Includes a small **Modbus TCP simulator**, so no hardware is needed for development and tests
 
+## Simulator register map
+
+Holding registers, float32, big endian, high word first.
+
+| Address | Value   | Unit |
+| ------- | ------- | ---- |
+| 0–1     | Voltage | V    |
+| 2–3     | Current | A    |
+| 4–5     | Power   | W    |
+| 6–7     | Energy  | kWh  |
+
+Reads outside this range return exception code 2 (Illegal Data Address).
+
 ## Why read-only
 
 Modbus TCP has **no authentication and no encryption**. Anyone who can reach the device on the network can read – and write – registers. In building automation and other OT environments, an unintended write can change setpoints or switch equipment.
@@ -34,39 +47,46 @@ Modbus TCP has **no authentication and no encryption**. Anyone who can reach the
 meterbridge therefore:
 
 - **never writes** to any register (only read function codes are used)
-- validates the config at startup (allowed register ranges, data types)
+- will validate the config at startup (allowed register ranges, data types)
 - is meant to run in a **segmented network**, with only the gateway allowed to reach the field devices
+
+The simulator follows the same rule: write requests are rejected with exception code 1 (Illegal Function).
 
 ## Getting started
 
-> Commands will be added as the project grows.
+Requires Go 1.26+.
 
 ```sh
-# Start the simulator
+# Start the simulator (Modbus TCP on port 5502)
 go run ./cmd/simulator
-
-# Start the gateway with the example config
-go run ./cmd/meterbridge -config config.example.yaml
-
-# Read values
-curl http://localhost:8080/api/values
 ```
+
+Read the values with [mbpoll](https://github.com/epsilonrt/mbpoll):
+
+```sh
+mbpoll -a 1 -r 1 -c 4 -t 4:float -B -p 5502 -1 127.0.0.1
+```
+
+`-B` sets big-endian word order (high word first), matching the register map above.
+
+The gateway (`cmd/meterbridge`) and the REST API are not implemented yet.
 
 ## Project structure
 
-```
+```text
 cmd/
-  meterbridge/   # gateway entry point
-  simulator/     # Modbus TCP meter simulator
+  meterbridge/ # gateway entry point
+  simulator/ # Modbus TCP meter simulator
 internal/
-  modbus/        # polling, register parsing, scaling
-  api/           # REST handlers
+  modbus/ # polling, register parsing, scaling
+  api/ # REST handlers
 config.example.yaml
 ```
 
 ## Roadmap
 
-- [ ] Modbus TCP simulator with fluctuating meter values
+- [x] Modbus TCP simulator with static meter values
+- [ ] Simulator: fluctuating values
 - [ ] Poller: read registers from YAML config, interval, timeout and reconnect
 - [ ] REST API: `/api/values`, `/api/health` (net/http, no framework)
 - [ ] Unit tests (scaling, parsing) and integration test against the simulator
@@ -81,4 +101,4 @@ config.example.yaml
 
 ## License
 
-MIT
+MIT – see [LICENSE](LICENSE).
