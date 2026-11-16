@@ -54,7 +54,7 @@ The simulator follows the same rule: write requests are rejected with exception 
 
 ## Getting started
 
-Requires Go 1.26+.
+Requires Go 1.27+.
 
 ```sh
 # Start the simulator (Modbus TCP on port 5502)
