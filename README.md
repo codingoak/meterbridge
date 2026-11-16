@@ -1,5 +1,7 @@
 # meterbridge
 
+[![CI](https://github.com/codingoak/meterbridge/actions/workflows/ci.yml/badge.svg)](https://github.com/codingoak/meterbridge/actions/workflows/ci.yml)
+
 A small, **read-only** gateway that polls energy meters over **Modbus TCP** and exposes the readings via a **REST API** (and optionally **MQTT**).
 
 > This is my first Go project. I'm building it to learn Go while working on a problem I know from my background in electrical installation and building automation: getting measurement data out of field devices safely and reliably.
@@ -90,7 +92,7 @@ config.example.yaml
 - [ ] Poller: read registers from YAML config, interval, timeout and reconnect
 - [ ] REST API: `/api/values`, `/api/health` (net/http, no framework)
 - [ ] Unit tests (scaling, parsing) and integration test against the simulator
-- [ ] CI with GitHub Actions (`go test`, `go vet`)
+- [x] CI with GitHub Actions (`go test`, `go vet`)
 - [ ] Optional: MQTT publishing and `docker-compose.yml` (simulator, gateway, broker)
 
 ## Tech
